@@ -1,52 +1,52 @@
 <template>
     <div>
-      <h1>Pruebas con Mongoose y Conversión de UF a CLP</h1>
-  
-      <!-- Sección para convertir UF a CLP -->
-      <form @submit.prevent="convertUF">
+    <h1>Pruebas con Mongoose y Conversión de UF a CLP</h1>
+    <!-- Sección para convertir UF a CLP -->
+    <form @submit.prevent="convertUF">
         <label for="amount">Cantidad en UF:</label>
         <input type="number" v-model="amount" id="amount" step="1" min="0">
         <input type="date" v-model="selectedDate">
         <button type="submit">Convertir UF a CLP</button>
-      </form>
-      <p v-if="error">{{ error }}</p>
-      <p v-else-if="ufValue">
+    </form>
+    <p v-if="error">{{ error }}</p>
+    <p v-else-if="ufValue">
         Fecha: {{ formattedDate(ufValue.fecha) }}<br>
-        Valor UF: ${{ ufValue.valor }}<br>
+        Valor UFF: ${{ ufValor }}<br>
         Cantidad en CLP: ${{ convertedAmount }}<br>
         Cantidad de UF: {{ ufQuantity }}
-      </p>
-  
-      <!-- Sección para agregar y mostrar datos de la base de datos -->
-      <h2>Manejo de datos con Mongoose</h2>
-      <input v-model="newMessage" placeholder="Escribe un mensaje" />
-      <input v-model="additionalMessage" placeholder="Escribe un mensaje adicional" />
-      <button @click="addData">Agregar dato</button>
-      <button @click="getSavedData">Consultar datos</button>
-      <button @click="deleteData">Eliminar dato</button>
-      <div v-if="data">
+    </p>
+    <!-- Sección para agregar y mostrar datos de la base de datos -->
+    <h2>Manejo de datos con Mongoose</h2>
+    <input v-model="newMessage" placeholder="Escribe un mensaje" />
+    <input v-model="additionalMessage" placeholder="Escribe un mensaje adicional" />
+    <button @click="addData">Agregar dato</button>
+    <button @click="getSavedData">Consultar datos</button>
+    <button @click="deleteData">Eliminar dato</button>
+    <div v-if="data">
         <h3>Dato agregado:</h3>
         <pre>{{ data.message }}</pre>
         <pre>{{ data.additionalMessage }}</pre>
         <pre>Cantidad en UF: {{ data.amount }}</pre>
-        <pre>Valor UF: ${{ data.ufValue }}</pre> <!-- Mostrar el valor de la UF -->
-      </div>
-      <div v-if="savedData.length > 0">
+        <pre>Valor UF: {{ data.ufValor }}</pre>
+        <pre>Data: ${{ data }}</pre> <!-- Mostrar el valor de la UF -->
+    </div>
+    <div v-if="savedData.length > 0">
         <h3>Datos en la base de datos:</h3>
         <ul>
-          <li v-for="item in savedData" :key="item._id">
+        <li v-for="item in savedData" :key="item._id">
             {{ item.message }}
             <br />
             {{ item.additionalMessage }}
             <br />
             Cantidad en UF: {{ item.amount }}
             <br />
-            Valor UF: {{ item.ufValue }}
-          </li>
+            Valor UF: {{ item.ufValor }}
+            <br><br>
+        </li>
         </ul>
-      </div>
     </div>
-  </template>
+    </div>
+</template>
 
 <script>
 import axios from 'axios';
@@ -59,6 +59,7 @@ export default {
         amount: null,
         error: null,
         newMessage: '',
+        ufValor: null,
         ufQuantity: null, // Added UF quantity property
         additionalMessage: '',
         data: null,
@@ -87,10 +88,11 @@ export default {
                 this.error = null;  // Clear previous errors
                 // Calculate UF quantity based on the provided amount and UF value
                 this.ufQuantity = this.amount;
+                this.ufValor = this.ufValue.valor;
                 // Add the UF conversion data to the database
                 const message = `Consultado en fecha: ${formattedDate}`;
                 const additionalMessage = `Cantidad de CLP: $${this.convertedAmount}`;
-                await this.addDataToDatabase(message, additionalMessage, this.ufQuantity);
+                await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor);
                 // Refresh saved data from the database
                 await this.getSavedData();
             } catch (error) {
@@ -99,13 +101,13 @@ export default {
             }
         },
         // Function to add data to the database
-        async addDataToDatabase(message, additionalMessage, ufQuantity, ufValue) {
+        async addDataToDatabase(message, additionalMessage, ufQuantity, ufValor) {
             try {
             const response = await axios.post('http://localhost:3000/api/data', {
                 message,
                 additionalMessage,
                 amount: ufQuantity, // Include the UF quantity
-                ufValue: ufValue // Include the value of UF
+                ufValor: ufValor // Include the value of UF
             });
             this.data = response.data;
             } catch (error) {
@@ -124,10 +126,10 @@ export default {
         async addData() {
             try {
             const response = await axios.post('http://localhost:3000/api/data', {
-                message: this.newMessage,
                 additionalMessage: this.additionalMessage, // Incluir el mensaje adicional
+                message: this.newMessage,
                 amount: this.amount, // Include the amount in UF
-                ufValue: this.ufValue.valor // Agregar el valor de la UF a la solicitud POST
+                ufValue: this.ufValor // Agregar el valor de la UF a la solicitud POST
             });
             this.data = response.data;
                 this.newMessage = ''; // Limpiar el input después de agregar

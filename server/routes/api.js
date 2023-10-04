@@ -4,8 +4,8 @@ const Data = require('../models/Data');
 
 router.post('/data', async (req, res) => {
     try {
-        const { message, additionalMessage, amount, ufValue } = req.body;
-        const newData = new Data({ message, additionalMessage, amount, ufValue });
+        const { message, additionalMessage, amount, ufValor } = req.body;
+        const newData = new Data({ message, additionalMessage, amount, ufValor });
         const savedData = await newData.save();
         res.json(savedData);
     } catch (error) {
