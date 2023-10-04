@@ -11,9 +11,9 @@
     <p v-if="error">{{ error }}</p>
     <p v-else-if="ufValue">
         Fecha: {{ formattedDate(ufValue.fecha) }}<br>
-        Valor UFF: ${{ ufValor }}<br>
-        Cantidad en CLP: ${{ convertedAmount }}<br>
-        Cantidad de UF: {{ ufQuantity }}
+        Cantidad de UF: {{ ufQuantity }}<br>
+        Valor histórico UF: ${{ ufValor }}<br>
+        Cantidad de UF en CLP: ${{ convertedAmount }}<br>
     </p>
     <!-- Sección para agregar y mostrar datos de la base de datos -->
     <h2>Manejo de datos con Mongoose</h2>
@@ -25,10 +25,9 @@
     <div v-if="data">
         <h3>Dato agregado:</h3>
         <pre>{{ data.message }}</pre>
-        <pre>{{ data.additionalMessage }}</pre>
         <pre>Cantidad en UF: {{ data.amount }}</pre>
-        <pre>Valor UF: {{ data.ufValor }}</pre>
-        <pre>Data: ${{ data }}</pre> <!-- Mostrar el valor de la UF -->
+        <pre>Valor histórico UF: {{ data.ufValor }}</pre>
+        <pre>{{ data.additionalMessage }}</pre>
     </div>
     <div v-if="savedData.length > 0">
         <h3>Datos en la base de datos:</h3>
@@ -36,11 +35,11 @@
         <li v-for="item in savedData" :key="item._id">
             {{ item.message }}
             <br />
-            {{ item.additionalMessage }}
-            <br />
             Cantidad en UF: {{ item.amount }}
             <br />
-            Valor UF: {{ item.ufValor }}
+            Valor histórico UF: {{ item.ufValor }}
+            <br />
+            {{ item.additionalMessage }}
             <br><br>
         </li>
         </ul>
@@ -90,8 +89,8 @@ export default {
                 this.ufQuantity = this.amount;
                 this.ufValor = this.ufValue.valor;
                 // Add the UF conversion data to the database
-                const message = `Consultado en fecha: ${formattedDate}`;
-                const additionalMessage = `Cantidad de CLP: $${this.convertedAmount}`;
+                const message = `Fecha histórica UF: ${formattedDate}`;
+                const additionalMessage = `Cantidad UF en CLP: $${this.convertedAmount}`;
                 await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor);
                 // Refresh saved data from the database
                 await this.getSavedData();
@@ -129,7 +128,7 @@ export default {
                 additionalMessage: this.additionalMessage, // Incluir el mensaje adicional
                 message: this.newMessage,
                 amount: this.amount, // Include the amount in UF
-                ufValue: this.ufValor // Agregar el valor de la UF a la solicitud POST
+                ufValor: this.ufValor // Agregar el valor de la UF a la solicitud POST
             });
             this.data = response.data;
                 this.newMessage = ''; // Limpiar el input después de agregar
