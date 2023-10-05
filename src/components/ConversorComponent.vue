@@ -235,4 +235,7 @@ border: 1px solid #ccc;
     margin-top: 20px;
     text-align: right;
 }
+.btn-success {
+    margin-left: 20px;
+}
 </style>
