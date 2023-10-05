@@ -3,18 +3,18 @@
   <div id="app">
     <LoginComponent v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
     <div v-else>
-      <TestComponent @logout="handleLogout" />
+      <ConversorComponent @logout="handleLogout" />
     </div>
   </div>
 </template>
 
 <script>
-import TestComponent from '@/components/TestComponent.vue';
+import ConversorComponent from '@/components/ConversorComponent.vue';
 import LoginComponent from '@/components/LoginComponent.vue';
 
 export default {
   components: {
-    TestComponent,
+    ConversorComponent,
     LoginComponent,
   },
   data() {

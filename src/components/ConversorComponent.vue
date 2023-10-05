@@ -1,52 +1,60 @@
 <template>
-    <div class="container mt-5">
-        <!-- Botón para cerrar sesión -->
-        <button @click="logout" class="btn btn-secondary">Cerrar Sesión</button>
-        <br><br><br>
-        <!-- Sección de conversión UF a CLP -->
-        <div>
-            <h1>Conversión UF a CLP</h1>
-            <form @submit.prevent="convertUF" class="mb-4">
-                <div class="form-group">
-                    <label for="amount">Cantidad de UF:</label>
-                    <input type="number" v-model="amount" id="amount" step="1" min="0" class="form-control custom-input" />
-                </div>
-                <div class="form-group">
-                    <label for="date">Fecha:</label>
-                    <input type="date" v-model="selectedDate" class="form-control custom-input" />
-                </div>
-                    <button type="submit" class="btn btn-primary">Convertir UF a CLP</button>
-            </form>
-            <div v-if="error" class="mt-3">
-                <p class="text-danger">{{ error }}</p>
+    <!-- Botón para cerrar sesión -->
+    <div class="container">
+        <div class="row">
+            <!-- Primera columna para la Conversión UF a CLP -->
+            <div class="btn-container col-md-12">
+                <button @click="logout" class="btn btn-outline-secondary">Cerrar Sesión</button>
             </div>
-            <div v-else-if="ufValue" class="mt-3">
-                <h2 class="mt-5">Datos Consultados:</h2>
-                <p>
-                    Fecha: {{ formattedDate(ufValue.fecha) }}<br>
-                    Valor UF: ${{ ufValor }}<br>
-                    Cantidad de UF: {{ ufQuantity }}<br>
-                    Cantidad de UF en CLP: ${{ convertedAmount }}<br>
-                </p>
+        <div class="col-md-4">
+            <div class="conversion-section rounded p-4">
+                <h2 class="text-orange">Conversión UF a CLP</h2>
+                <form @submit.prevent="convertUF" class="mb-4">
+                <div class="form-group">
+                    <label for="amount" class="text-dark">Cantidad de UF:</label>
+                    <input type="number" v-model="amount" id="amount" step="1" min="0" class="form-control custom-input"/>
+                </div>
+                <div class="form-group">
+                    <label for="date" class="text-dark">Fecha:</label>
+                    <input type="date" v-model="selectedDate" class="form-control custom-input" />
+                </div><br>
+                    <button type="submit" class="btn btn-primary">Convertir UF a CLP</button>
+                </form>
+                <div v-if="error" class="mt-3">
+                    <p class="text-danger">{{ error }}</p>
+                </div>
+                <div v-else-if="ufValue" class="estilo-datos">
+                    <h3 class="mt-5 text-orange">Datos Consultados:</h3>
+                    <p class="text-dark">
+                    Fecha: {{ formattedDate(ufValue.fecha) }}<br />
+                    Valor UF: ${{ ufValue.valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') }}<br />
+                    Cantidad de UF: {{ ufQuantity ? ufQuantity.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}<br />
+                    Cantidad de UF en CLP: ${{ convertedAmount }}<br />
+                    </p>
+                </div>
             </div>
         </div>
-        <!-- Sección de manejo de datos con Mongoose -->
-        <div>
-            <h2 class="mt-5">Manejo de datos</h2>
-            <button @click="getSavedData" class="btn btn-info">Consultar datos</button>
-            <button @click="deleteData" class="btn btn-danger">Eliminar dato</button>
-            <div v-if="savedData.length > 0" class="mt-3">
-                <h3>Datos en la base de datos:</h3>
-                <div class="card" v-for="item in savedData" :key="item._id">
+    <!-- Segunda columna para Datos de la base de datos -->
+    <div class="col-md-6">
+        <div class="data-section rounded p-4">
+            <h2 class="text-gris">Historial de Consultas</h2>
+            <button @click="getSavedData" class="btn btn-primary">Ver datos</button>
+            <br>
+            <br>
+            <div v-if="savedData.length > 0" class="estilo-datos">
+                <div class="card" v-for="item in reversedSavedData" :key="item._id">
                     <div class="card-body">
                         <h5 class="card-title">{{ item.message }}</h5>
-                        <p class="card-text">Valor UF: ${{ item.ufValor }}</p>
-                        <p class="card-text">Cantidad de UF: {{ item.amount }}</p>
+                        <p class="card-text">Valor UF: ${{ item.ufValor ? item.ufValor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}</p>
+                        <p class="card-text">Cantidad de UF: {{ item.amount ? item.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}</p>
                         <p class="card-text">{{ item.additionalMessage }}</p>
+                        <button @click="deleteData(item._id)" class="btn btn-danger ml-auto">Eliminar</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
 </template>
 
@@ -75,6 +83,9 @@ export default {
         }
         const amountInCLP = Math.ceil(this.amount * this.ufValue.valor);
         return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(amountInCLP);
+    },
+    reversedSavedData() {
+        return this.savedData.slice().reverse();
     }
     },
     methods: {
@@ -83,33 +94,35 @@ export default {
                 this.error = 'Seleccione una fecha.';
                 return;
             }
+            // Verificar si la cantidad es un número válido
+            const parsedAmount = parseFloat(this.amount);
+            if (isNaN(parsedAmount) || parsedAmount <= 0) {
+                this.error = 'Ingrese una cantidad válida de UF.';
+                return;
+            }
             const formattedDate = this.formatDate(this.selectedDate);
             try {
                 const response = await axios.get(`http://localhost:3000/uf/${formattedDate}`);
                 this.ufValue = response.data.serie[0];
-                this.error = null;  // Clear previous errors
-                // Calculate UF quantity based on the provided amount and UF value
+                this.error = null;
                 this.ufQuantity = this.amount;
                 this.ufValor = this.ufValue.valor;
-                // Add the UF conversion data to the database
-                const message = `Valor de la UF en la Fecha: ${formattedDate}`;
+                const message = `Fecha: ${formattedDate}`;
                 const additionalMessage = `UF en CLP: $${this.convertedAmount}`;
                 await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor);
-                // Refresh saved data from the database
                 await this.getSavedData();
             } catch (error) {
                 console.error('Error al obtener el valor de la UF:', error);
                 this.error = 'Error al obtener el valor de la UF.';
             }
         },
-        // Function to add data to the database
         async addDataToDatabase(message, additionalMessage, ufQuantity, ufValor) {
             try {
             const response = await axios.post('http://localhost:3000/api/data', {
                 message,
                 additionalMessage,
-                amount: ufQuantity, // Include the UF quantity
-                ufValor: ufValor // Include the value of UF
+                amount: ufQuantity,
+                ufValor: ufValor
             });
             this.data = response.data;
             } catch (error) {
@@ -135,19 +148,14 @@ export default {
             console.error('Error al obtener datos:', error);
             }
         },
-        async deleteData() {
-            try {
-            if (this.savedData.length === 0) {
-                alert('No hay datos para eliminar.');
-                return;
-            }
-            const dataIdToDelete = this.savedData[0]._id;
-            await axios.delete(`http://localhost:3000/api/data/${dataIdToDelete}`);
-            this.savedData = this.savedData.filter(item => item._id !== dataIdToDelete);
-            } catch (error) {
+        async deleteData(dataId) {
+        try {
+            await axios.delete(`http://localhost:3000/api/data/${dataId}`);
+            this.savedData = this.savedData.filter(item => item._id !== dataId);
+        } catch (error) {
             console.error('Error al eliminar el dato:', error);
-            }
-        },
+        }
+    },
         logout() {
             this.$emit('logout'); // Evento de cierre de sesión
         }
@@ -163,15 +171,34 @@ export default {
 }
 /* Estilos para la lista de datos */
 ul {
-  list-style: none;
-  padding: 10px;
+list-style: none;
+padding: 10px;
 }
 ul li {
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
+margin-bottom: 10px;
+padding: 10px;
+border: 1px solid #ccc;
 }
 .custom-input {
-  max-width: 250px; /* Ajusta el ancho máximo según tu preferencia */
+  max-width: 80%; /* Ajusta el ancho máximo según tu preferencia */
+}
+
+.text-orange {
+    color: rgb(255,88,0);
+}
+
+.text.gris {
+    color: rgb(105,104,128);
+}
+.estilo-datos {
+    font-family: inherit;
+}
+.btn-outline-secondary{
+    margin: auto;
+    width: fit-content;
+}
+.btn-container{
+    margin-top: 20px;
+    text-align: right;
 }
 </style>
