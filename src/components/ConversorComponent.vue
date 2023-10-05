@@ -27,6 +27,7 @@
                     <h3 class="mt-5 text-orange">Datos Consultados:</h3>
                     <p class="text-dark">
                     Fecha: {{ formattedDate(ufValue.fecha) }}<br />
+                    Hora: {{ currentTime }}<br/>
                     Valor UF: ${{ ufValue.valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') }}<br />
                     Cantidad de UF: {{ ufQuantity ? ufQuantity.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}<br />
                     Cantidad de UF en CLP: ${{ convertedAmount }}<br />
@@ -45,9 +46,10 @@
                 <div class="card" v-for="item in reversedSavedData" :key="item._id">
                     <div class="card-body">
                         <h5 class="card-title">{{ item.message }}</h5>
+                        <p class="card-text">Hora: {{ item.currentTime }}</p>
                         <p class="card-text">Valor UF: ${{ item.ufValor ? item.ufValor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}</p>
                         <p class="card-text">Cantidad de UF: {{ item.amount ? item.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A' }}</p>
-                        <p class="card-text">{{ item.additionalMessage }}</p>
+                        <p class="card-text">{{item.amount}}{{ item.additionalMessage }}</p>
                         <button @click="deleteData(item._id)" class="btn btn-danger ml-auto">Eliminar</button>
                     </div>
                 </div>
@@ -70,6 +72,7 @@ export default {
         error: null,
         newMessage: '',
         ufValor: null,
+        currentTime: null,
         ufQuantity: null, // Added UF quantity property
         additionalMessage: '',
         data: null,
@@ -100,6 +103,9 @@ export default {
                 this.error = 'Ingrese una cantidad válida de UF.';
                 return;
             }
+            // Obtener la hora actual
+            const currentTime = new Date().toLocaleTimeString();
+            this.currentTime = currentTime;
             const formattedDate = this.formatDate(this.selectedDate);
             try {
                 const response = await axios.get(`http://localhost:3000/uf/${formattedDate}`);
@@ -109,20 +115,21 @@ export default {
                 this.ufValor = this.ufValue.valor;
                 const message = `Fecha: ${formattedDate}`;
                 const additionalMessage = `UF en CLP: $${this.convertedAmount}`;
-                await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor);
+                await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor, this.currentTime);
                 await this.getSavedData();
             } catch (error) {
                 console.error('Error al obtener el valor de la UF:', error);
                 this.error = 'Error al obtener el valor de la UF.';
             }
         },
-        async addDataToDatabase(message, additionalMessage, ufQuantity, ufValor) {
+        async addDataToDatabase(message, additionalMessage, ufQuantity, ufValor, currentTime) {
             try {
             const response = await axios.post('http://localhost:3000/api/data', {
                 message,
                 additionalMessage,
                 amount: ufQuantity,
-                ufValor: ufValor
+                ufValor: ufValor,
+                currentTime: currentTime
             });
             this.data = response.data;
             } catch (error) {

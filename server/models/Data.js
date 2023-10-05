@@ -6,6 +6,7 @@ const dataSchema = new mongoose.Schema({
     additionalMessage: String,
     amount: String,
     ufValor: String,
+    currentTime: String
 });
 
 module.exports = mongoose.model('Data', dataSchema);
