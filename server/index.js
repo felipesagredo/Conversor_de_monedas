@@ -15,9 +15,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/db?directConnection=true&serverSelec
 });
 
 const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'Connection error:'));
+db.on('error', console.error.bind(console, 'Conexión error:'));
 db.once('open', () => {
-    console.log('Connected to the database');
+    console.log('Conectado a la Base de Datos');
 });
 
 app.get('/uf/:date', async (req, res) => {
@@ -32,9 +32,9 @@ app.get('/uf/:date', async (req, res) => {
 });
 
 const apiRoutes = require('./routes/api');
-app.use('/api', apiRoutes);
+app.use('/', apiRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Servidor corriendo en el puerto: ${PORT}`);
 });

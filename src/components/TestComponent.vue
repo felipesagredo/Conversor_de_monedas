@@ -1,49 +1,52 @@
 <template>
-    <div>
-    <h1>Pruebas con Mongoose y Conversión de UF a CLP</h1>
-    <!-- Sección para convertir UF a CLP -->
-    <form @submit.prevent="convertUF">
-        <label for="amount">Cantidad en UF:</label>
-        <input type="number" v-model="amount" id="amount" step="1" min="0">
-        <input type="date" v-model="selectedDate">
-        <button type="submit">Convertir UF a CLP</button>
-    </form>
-    <p v-if="error">{{ error }}</p>
-    <p v-else-if="ufValue">
-        Fecha: {{ formattedDate(ufValue.fecha) }}<br>
-        Cantidad de UF: {{ ufQuantity }}<br>
-        Valor histórico UF: ${{ ufValor }}<br>
-        Cantidad de UF en CLP: ${{ convertedAmount }}<br>
-    </p>
-    <!-- Sección para agregar y mostrar datos de la base de datos -->
-    <h2>Manejo de datos con Mongoose</h2>
-    <input v-model="newMessage" placeholder="Escribe un mensaje" />
-    <input v-model="additionalMessage" placeholder="Escribe un mensaje adicional" />
-    <button @click="addData">Agregar dato</button>
-    <button @click="getSavedData">Consultar datos</button>
-    <button @click="deleteData">Eliminar dato</button>
-    <div v-if="data">
-        <h3>Dato agregado:</h3>
-        <pre>{{ data.message }}</pre>
-        <pre>Cantidad en UF: {{ data.amount }}</pre>
-        <pre>Valor histórico UF: {{ data.ufValor }}</pre>
-        <pre>{{ data.additionalMessage }}</pre>
-    </div>
-    <div v-if="savedData.length > 0">
-        <h3>Datos en la base de datos:</h3>
-        <ul>
-        <li v-for="item in savedData" :key="item._id">
-            {{ item.message }}
-            <br />
-            Cantidad en UF: {{ item.amount }}
-            <br />
-            Valor histórico UF: {{ item.ufValor }}
-            <br />
-            {{ item.additionalMessage }}
-            <br><br>
-        </li>
-        </ul>
-    </div>
+    <div class="container mt-5">
+        <!-- Botón para cerrar sesión -->
+        <button @click="logout" class="btn btn-secondary">Cerrar Sesión</button>
+        <br><br><br>
+        <!-- Sección de conversión UF a CLP -->
+        <div>
+            <h1>Conversión UF a CLP</h1>
+            <form @submit.prevent="convertUF" class="mb-4">
+                <div class="form-group">
+                    <label for="amount">Cantidad de UF:</label>
+                    <input type="number" v-model="amount" id="amount" step="1" min="0" class="form-control custom-input" />
+                </div>
+                <div class="form-group">
+                    <label for="date">Fecha:</label>
+                    <input type="date" v-model="selectedDate" class="form-control custom-input" />
+                </div>
+                    <button type="submit" class="btn btn-primary">Convertir UF a CLP</button>
+            </form>
+            <div v-if="error" class="mt-3">
+                <p class="text-danger">{{ error }}</p>
+            </div>
+            <div v-else-if="ufValue" class="mt-3">
+                <h2 class="mt-5">Datos Consultados:</h2>
+                <p>
+                    Fecha: {{ formattedDate(ufValue.fecha) }}<br>
+                    Valor UF: ${{ ufValor }}<br>
+                    Cantidad de UF: {{ ufQuantity }}<br>
+                    Cantidad de UF en CLP: ${{ convertedAmount }}<br>
+                </p>
+            </div>
+        </div>
+        <!-- Sección de manejo de datos con Mongoose -->
+        <div>
+            <h2 class="mt-5">Manejo de datos</h2>
+            <button @click="getSavedData" class="btn btn-info">Consultar datos</button>
+            <button @click="deleteData" class="btn btn-danger">Eliminar dato</button>
+            <div v-if="savedData.length > 0" class="mt-3">
+                <h3>Datos en la base de datos:</h3>
+                <div class="card" v-for="item in savedData" :key="item._id">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.message }}</h5>
+                        <p class="card-text">Valor UF: ${{ item.ufValor }}</p>
+                        <p class="card-text">Cantidad de UF: {{ item.amount }}</p>
+                        <p class="card-text">{{ item.additionalMessage }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -89,8 +92,8 @@ export default {
                 this.ufQuantity = this.amount;
                 this.ufValor = this.ufValue.valor;
                 // Add the UF conversion data to the database
-                const message = `Fecha histórica UF: ${formattedDate}`;
-                const additionalMessage = `Cantidad UF en CLP: $${this.convertedAmount}`;
+                const message = `Valor de la UF en la Fecha: ${formattedDate}`;
+                const additionalMessage = `UF en CLP: $${this.convertedAmount}`;
                 await this.addDataToDatabase(message, additionalMessage, this.ufQuantity, this.ufValor);
                 // Refresh saved data from the database
                 await this.getSavedData();
@@ -121,26 +124,13 @@ export default {
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             return new Date(dateString).toLocaleDateString('es-CL', options);
         },
-        // ... otros métodos relacionados con la conversión UF a CLP ...
-        async addData() {
-            try {
-            const response = await axios.post('http://localhost:3000/api/data', {
-                additionalMessage: this.additionalMessage, // Incluir el mensaje adicional
-                message: this.newMessage,
-                amount: this.amount, // Include the amount in UF
-                ufValor: this.ufValor // Agregar el valor de la UF a la solicitud POST
-            });
-            this.data = response.data;
-                this.newMessage = ''; // Limpiar el input después de agregar
-                this.additionalMessage = ''; // Limpiar el input adicional después de agregar
-            } catch (error) {
-            console.error('Error al agregar el dato:', error);
-            }
-        },
         async getSavedData() {
             try {
             const response = await axios.get('http://localhost:3000/api/data');
             this.savedData = response.data;
+            if (this.savedData.length === 0) {
+                alert('No hay datos para mostrar.');
+            }
             } catch (error) {
             console.error('Error al obtener datos:', error);
             }
@@ -157,11 +147,31 @@ export default {
             } catch (error) {
             console.error('Error al eliminar el dato:', error);
             }
+        },
+        logout() {
+            this.$emit('logout'); // Evento de cierre de sesión
         }
-    }
+    },
+    emits: ['logout']
 };
 </script>
 
 <style scoped>
-/* Estilos específicos para este componente si es necesario */
+/* Estilos específicos del componente */
+.btn-danger {
+  margin-left: 0px; /* Espacio entre el botón y el contenido */
+}
+/* Estilos para la lista de datos */
+ul {
+  list-style: none;
+  padding: 10px;
+}
+ul li {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+.custom-input {
+  max-width: 250px; /* Ajusta el ancho máximo según tu preferencia */
+}
 </style>

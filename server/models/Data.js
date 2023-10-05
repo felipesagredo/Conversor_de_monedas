@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
     message: String,
-    additionalMessage: String, // Nuevo campo para el mensaje adicional
+    additionalMessage: String,
     amount: String,
     ufValor: String,
 });
