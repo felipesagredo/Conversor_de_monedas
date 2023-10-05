@@ -5,6 +5,7 @@
             <!-- Primera columna para la Conversión UF a CLP -->
             <div class="btn-container col-md-12">
                 <button @click="logout" class="btn btn-outline-secondary">Cerrar Sesión</button>
+                
             </div>
         <div class="col-md-4">
             <div class="conversion-section rounded p-4">
@@ -40,6 +41,7 @@
         <div class="data-section rounded p-4">
             <h2 class="text-gris">Historial de Consultas</h2>
             <button @click="getSavedData" class="btn btn-primary">Ver datos</button>
+            <button @click="exportToExcel" class="btn btn-success">Exportar a Excel</button>
             <br>
             <br>
             <div v-if="savedData.length > 0" class="estilo-datos">
@@ -62,6 +64,7 @@
 
 <script>
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 export default {
     data() {
@@ -121,6 +124,30 @@ export default {
                 console.error('Error al obtener el valor de la UF:', error);
                 this.error = 'Error al obtener el valor de la UF.';
             }
+        },
+        exportToExcel() {
+        const data = [
+        // Data for Excel, e.g., savedData
+        // Modify this data according to your requirements
+        ['Fecha', 'Hora', 'Valor UF', 'Cantidad de UF', 'Conversion UF a CLP'],
+        ...this.savedData.map(item => [
+            item.message,
+            item.currentTime,
+            item.ufValor ? `$${item.ufValor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}` : 'N/A',
+            item.amount ? item.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : 'N/A',
+            item.additionalMessage
+        ])
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Historial_consultas');
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(dataBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'historial_consultas.xlsx';
+        a.click();
         },
         async addDataToDatabase(message, additionalMessage, ufQuantity, ufValor, currentTime) {
             try {
